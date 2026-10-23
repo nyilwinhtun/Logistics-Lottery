@@ -10,7 +10,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ထောက်ပို့ထီ Admin">
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10692/10692994.png">
 
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -328,7 +330,7 @@
     </div>
   </main>
 
-  <!-- 3. ADMIN SETTINGS MODAL (THEME PREVIEW + SAVE BUTTON + WHITELIST + TRANSFER) -->
+  <!-- 3. ADMIN SETTINGS MODAL -->
   <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6">
       
@@ -342,7 +344,7 @@
         </button>
       </div>
 
-      <!-- SECTION 1: THEME COLOR SELECTION WITH EXPLICIT SAVE BUTTON -->
+      <!-- SECTION 1: THEME COLOR SELECTION -->
       <div class="bg-slate-900 p-4 rounded-xl border theme-border-primary space-y-3">
         <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
           <i data-lucide="palette" class="w-4 h-4 theme-text-primary"></i>
@@ -424,7 +426,7 @@
     </div>
   </div>
 
-  <!-- 4. DIRECT ONE-CLICK INSTALL BANNER (ဖုန်းမျက်နှာပြင်ပေါ်တွင် အမြဲအသင့်ရှိနေမည့် တိုက်ရိုက် INSTALL ခလုတ်) -->
+  <!-- 4. DIRECT ONE-CLICK INSTALL BANNER -->
   <div id="directHomeInstallBanner" class="fixed bottom-4 left-4 right-4 max-w-sm mx-auto bg-slate-800/95 border-2 theme-border-primary p-3.5 rounded-2xl shadow-2xl backdrop-blur-md z-50 flex items-center justify-between gap-3 transition-all duration-300">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-xl theme-btn-primary flex items-center justify-center shrink-0">
@@ -442,6 +444,38 @@
       </button>
       <button type="button" onclick="dismissHomeBanner()" class="text-slate-400 hover:text-white p-1">
         <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- iOS Safari Install Tooltip Guidance Modal (iPhone အသုံးပြုသူများအတွက်) -->
+  <div id="iosInstallGuideModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-4">
+    <div class="bg-slate-800 border theme-border-primary rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <h4 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-4 h-4 theme-text-primary"></i>
+          <span>iPhone / Safari တွင် App တင်ရန်</span>
+        </h4>
+        <button type="button" onclick="closeIosGuide()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="text-xs text-slate-300 space-y-3">
+        <div class="flex items-start gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center shrink-0 text-white font-bold">1</span>
+          <p>Safari browser ၏ အောက်ခြေရှိ <strong class="text-white">Share</strong> (မြှားအပေါ်ထောင်ထားသော အိုင်ကွန်) ကို နှိပ်ပါ</p>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center shrink-0 text-white font-bold">2</span>
+          <p>အောက်သို့ အနည်းငယ်ဆွဲချပြီး <strong class="text-white">"Add to Home Screen"</strong> ကို ရွေးပေးပါ</p>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center shrink-0 text-white font-bold">3</span>
+          <p>ညာဘက်အပေါ်ထောင့်ရှိ <strong class="text-white">"Add"</strong> ကို နှိပ်လိုက်ပါက ဖုန်းမျက်နှာပြင်ပေါ် ရောက်ရှိသွားပါမည်</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeIosGuide()" class="w-full theme-btn-primary font-bold py-2 rounded-xl text-xs">
+        နားလည်ပါပြီ
       </button>
     </div>
   </div>
@@ -472,16 +506,19 @@
     let agentSalesAggregated = [];
     let selectedTempTheme = "amber";
 
-    // 2. ONE-CLICK DIRECT HOME SCREEN INSTALL ENGINE (အမှားကင်းစင်သော တိုက်ရိုက် INSTALL စနစ်)
+    // 2. ONE-CLICK DIRECT HOME SCREEN INSTALL ENGINE
     let deferredPrompt = null;
 
+    // Service Worker မှန်ကန်စွာ Register လုပ်ခြင်း
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js')
+          .then((reg) => console.log('Service Worker Registered Successfully:', reg.scope))
+          .catch((err) => console.log('Service Worker Registration Failed:', err));
       });
     }
 
-    // Capture Native Browser Install Event
+    // Android / Chrome Install Prompt ဖမ်းယူခြင်း
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -489,7 +526,7 @@
       if (banner) banner.classList.remove('hidden');
     });
 
-    // Check if App is already installed/running in standalone mode
+    // App အဖြစ် Install လုပ်ပြီးသားဖြစ်ပါက Banner ကို အလိုအလျောက် ဝှက်ထားခြင်း
     window.addEventListener('DOMContentLoaded', () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
       const banner = document.getElementById('directHomeInstallBanner');
@@ -498,39 +535,49 @@
       }
     });
 
-    // "တင်မည်" ကို နှိပ်လိုက်သည်နှင့် ချက်ချင်း Native Dialog ထွက်စေမည့် Function
+    // အက်ပ် သွင်းယူပြီးပါက Banner ဖျောက်ခြင်း
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      dismissHomeBanner();
+      alert('အက်ပ်အား Home Screen ပေါ် အောင်မြင်စွာ တင်ပြီးပါပြီ!');
+    });
+
+    // တိုက်ရိုက် Install Button Function
     async function executeDirectHomeInstall() {
-      const btn = document.getElementById('installActionButton');
+      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
       
+      if (isIos) {
+        // iOS Safari အတွက် လမ်းညွှန် Modal ပြသခြင်း
+        document.getElementById('iosInstallGuideModal').classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
       if (deferredPrompt) {
         try {
-          btn.disabled = true;
-          btn.innerText = "လုပ်ဆောင်နေသည်...";
-          
-          // System Native Prompt ကို တိုက်ရိုက် တန်းခေါ်ယူခြင်း
-          await deferredPrompt.prompt();
+          deferredPrompt.prompt();
           const choiceResult = await deferredPrompt.userChoice;
-          
           if (choiceResult && choiceResult.outcome === 'accepted') {
             dismissHomeBanner();
           }
         } catch (err) {
           console.error("Install Error:", err);
         } finally {
-          btn.disabled = false;
-          btn.innerText = "တင်မည်";
           deferredPrompt = null;
         }
       } else {
-        // အကယ်၍ Browser က Event မဖမ်းရသေးပါက Direct Android Install Intent ဖြင့် အတင်း Trigger ပြုလုပ်ခြင်း
-        const hostUrl = window.location.host + window.location.pathname;
-        window.location.href = `intent://${hostUrl}#Intent;scheme=https;action=android.intent.action.VIEW;package=com.android.chrome;end;`;
+        // Chrome Menu မှ တိုက်ရိုက် သွင်းယူနိုင်ကြောင်း အသိပေးခြင်း
+        alert("ဖုန်း Browser ၏ ညာဘက်အပေါ်ထောင့် အစက်သုံးစက် (Menu) ကို နှိပ်ပြီး 'Install app' (သို့မဟုတ်) 'Add to Home Screen' ကို ရွေးချယ်ပေးပါ ခင်ဗျာ။");
       }
     }
 
     function dismissHomeBanner() {
       const banner = document.getElementById('directHomeInstallBanner');
       if (banner) banner.classList.add('hidden');
+    }
+
+    function closeIosGuide() {
+      document.getElementById('iosInstallGuideModal').classList.add('hidden');
     }
 
     // 3. MOBILE ACCORDION ENGINE
@@ -606,7 +653,7 @@
           document.getElementById('adminDashboard').classList.remove('hidden');
           document.getElementById('authActions').classList.remove('hidden');
           document.getElementById('adminEmailDisplay').innerText = user.email;
-          document.getElementById('headerStatus').innerText = "စနစ် ချိတ်ဆက်ထားသည်";
+          document.getElementById('headerStatus').innerText = "စနစ် ချဆက်ထားသည်";
 
           fetchLatestDraw();
           listenToApprovedAgents();
