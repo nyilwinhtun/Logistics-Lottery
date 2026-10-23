@@ -366,7 +366,7 @@
           </button>
         </div>
 
-        <!-- EXPLICIT SAVE BUTTON FOR SETTINGS -->
+        <!-- EXPLICIT SAVE BUTTON -->
         <div class="pt-2 flex justify-end">
           <button type="button" onclick="saveThemeSettings()" class="theme-btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition">
             <i data-lucide="save" class="w-4 h-4"></i>
@@ -424,23 +424,25 @@
     </div>
   </div>
 
-  <!-- 4. DIRECT AUTO POPUP MODAL (WEBPAGE ထဲ စဝင်သည်နှင့် တန်းပေါ်မည့် AUTO INSTALL MODAL) -->
-  <div id="pwaAutoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border-2 theme-border-primary rounded-3xl w-full max-w-sm p-6 text-center space-y-4 shadow-2xl animate-bounce-short">
-      <div class="w-16 h-16 rounded-2xl theme-btn-primary flex items-center justify-center mx-auto shadow-xl">
-        <i data-lucide="download" class="w-8 h-8 text-slate-950"></i>
-      </div>
-      <div>
-        <h3 class="text-base font-bold text-white">ထောက်ပို့ထီ Admin App သွင်းရန်</h3>
-        <p class="text-xs text-slate-300 mt-1">ဖုန်း Home Screen ပေါ်တွင် App အဖြစ် ထည့်သွင်းအသုံးပြုပါက ပိုမိုမြန်ဆန်ပြီး လုံခြုံမှုရှိပါသည်</p>
+  <!-- 4. DIRECT ADD TO HOME SCREEN TRIGGER BUTTON & BANNER (ဘာမှရွေးစရာမလိုဘဲ တိုက်ရိုက်တင်မည့် အပိုင်း) -->
+  <div id="directHomeInstallBanner" class="fixed bottom-4 left-4 right-4 max-w-sm mx-auto bg-slate-800/95 border-2 theme-border-primary p-3.5 rounded-2xl shadow-2xl backdrop-blur-md z-50 hidden transition-all duration-300">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl theme-btn-primary flex items-center justify-center shrink-0">
+          <i data-lucide="plus-square" class="w-5 h-5 text-slate-950"></i>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold text-white">Home Screen ပေါ်တင်ရန်</h4>
+          <p class="text-[11px] text-slate-400">ဖုန်းပေါ်တွင် App အဖြစ်သုံးပါ</p>
+        </div>
       </div>
 
-      <div class="space-y-2 pt-2">
-        <button type="button" onclick="triggerPWAInstall()" class="w-full theme-btn-primary py-3 rounded-xl text-xs font-bold shadow-lg transition">
-          အခုပဲ Install တင်မည်
+      <div class="flex items-center gap-1.5">
+        <button type="button" onclick="executeDirectHomeInstall()" class="theme-btn-primary px-3 py-1.5 rounded-xl text-xs font-bold shadow-md transition">
+          တင်မည်
         </button>
-        <button type="button" onclick="dismissPWAAutoModal()" class="w-full bg-slate-700/80 hover:bg-slate-700 text-slate-400 hover:text-white py-2.5 rounded-xl text-xs font-medium transition">
-          ခဏထားပါ
+        <button type="button" onclick="dismissHomeBanner()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
     </div>
@@ -527,50 +529,70 @@
     initAdminTheme();
     lucide.createIcons();
 
-    // 4. DIRECT AUTO POPUP & PWA INSTALL LOGIC
+    // 4. DIRECT ADD TO HOME SCREEN ENGINE (ဘာမှရွေးစရာမလိုဘဲ တိုက်ရိုက်တန်းတင်ပေးမည့် LOGIC)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration skipped'));
+        navigator.serviceWorker.register('sw.js').catch(() => {});
       });
     }
 
-    // Auto popup as soon as user visits website
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        const isDismissed = sessionStorage.getItem('pwa_auto_prompt_dismissed');
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        if (!isDismissed && !isStandalone) {
-          const autoModal = document.getElementById('pwaAutoModal');
-          if (autoModal) autoModal.classList.remove('hidden');
-        }
-      }, 1000);
-    });
-
+    // Capture Native Prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      const autoModal = document.getElementById('pwaAutoModal');
-      if (autoModal) autoModal.classList.remove('hidden');
+      
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      if (!isStandalone) {
+        // ဖုန်း browser က ခွင့်ပြုပါက တိုက်ရိုက် Auto-Prompt ချက်ချင်း လှမ်းခေါ်မည်
+        try {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              dismissHomeBanner();
+            }
+            deferredPrompt = null;
+          });
+        } catch (err) {
+          // Gesture လိုအပ်ပါက Direct Banner ကို ပြသထားမည်
+          const banner = document.getElementById('directHomeInstallBanner');
+          if (banner) banner.classList.remove('hidden');
+        }
+      }
     });
 
-    function triggerPWAInstall() {
+    // Web Page ဝင်လာပြီး prompt မတက်သေးပါက Banner ကို အလိုအလျောက် တင်ပြထားပေးခြင်း
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isDismissed = sessionStorage.getItem('home_banner_dismissed');
+        if (!isStandalone && !isDismissed) {
+          const banner = document.getElementById('directHomeInstallBanner');
+          if (banner) banner.classList.remove('hidden');
+        }
+      }, 1200);
+    });
+
+    // ခလုတ်နှိပ်ပါက တိုက်ရိုက် Home Screen ပေါ်တင်မည့် Function
+    function executeDirectHomeInstall() {
       if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
-            dismissPWAAutoModal();
+            dismissHomeBanner();
           }
           deferredPrompt = null;
         });
       } else {
-        alert("ဖုန်း Browser ၏ Menu (၃ စက်) ထဲရှိ 'Install app' သို့မဟုတ် 'Add to Home screen' ကို ရွေးချယ်ပေးပါ");
-        dismissPWAAutoModal();
+        // Fallback for browsers
+        alert("ဖုန်း Browser Menu ထဲရှိ 'Add to Home screen' သို့မဟုတ် 'Install' ကို ရွေးပေးနိုင်ပါသည်");
+        dismissHomeBanner();
       }
     }
 
-    function dismissPWAAutoModal() {
-      document.getElementById('pwaAutoModal').classList.add('hidden');
-      sessionStorage.setItem('pwa_auto_prompt_dismissed', 'true');
+    function dismissHomeBanner() {
+      const banner = document.getElementById('directHomeInstallBanner');
+      if (banner) banner.classList.add('hidden');
+      sessionStorage.setItem('home_banner_dismissed', 'true');
     }
 
     // 5. AUTH STATE LISTENER & DYNAMIC ADMIN CHECK
