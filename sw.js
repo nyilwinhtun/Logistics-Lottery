@@ -1,13 +1,25 @@
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-});
+// DIRECT PWA PROMPT ONLY (စာတန်းလုံးဝ မပြစေရန်)
+    let deferredPrompt = null;
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
-});
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const banner = document.getElementById('directHomeInstallBanner');
+      if (banner) banner.classList.remove('hidden');
+    });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
-});
+    async function executeDirectHomeInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          dismissHomeBanner();
+        }
+        deferredPrompt = null;
+      }
+    }
+
+    function dismissHomeBanner() {
+      const banner = document.getElementById('directHomeInstallBanner');
+      if (banner) banner.classList.add('hidden');
+    }
