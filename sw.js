@@ -1,25 +1,31 @@
-// DIRECT PWA PROMPT ONLY (စာတန်းလုံးဝ မပြစေရန်)
-    let deferredPrompt = null;
+// -------------------------------------------------------------
+// PWA SERVICE WORKER (SERVICE WORKER CACHE ENGINE)
+// -------------------------------------------------------------
+const CACHE_NAME = 'thaukpo-v2';
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const banner = document.getElementById('directHomeInstallBanner');
-      if (banner) banner.classList.remove('hidden');
-    });
+self.addEventListener('install', (event) => {
+  // Service Worker အသစ်ကို ချက်ချင်း အလုပ်လုပ်စေခြင်း
+  self.skipWaiting();
+});
 
-    async function executeDirectHomeInstall() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          dismissHomeBanner();
-        }
-        deferredPrompt = null;
-      }
-    }
+self.addEventListener('activate', (event) => {
+  // Cache အဟောင်းများကို ရှင်းထုတ်ပြီး လက်ရှိ စာမျက်နှာကို ထိန်းချုပ်ခြင်း
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => clients.claim())
+  );
+});
 
-    function dismissHomeBanner() {
-      const banner = document.getElementById('directHomeInstallBanner');
-      if (banner) banner.classList.add('hidden');
-    }
+self.addEventListener('fetch', (event) => {
+  // Network မှ တိုက်ရိုက် ဆွဲယူခြင်း (အမြဲတမ်း Live ဖြစ်စေရန်)
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
+});
