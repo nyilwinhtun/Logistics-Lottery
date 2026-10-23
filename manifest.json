@@ -1,0 +1,20 @@
+{
+  "name": "ထောက်ပို့ထီ စီမံခန့်ခွဲရေး",
+  "short_name": "ထောက်ပို့ထီ",
+  "start_url": "./admin.html",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/192/2618/2618498.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2618/2618498.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
