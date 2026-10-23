@@ -28,7 +28,7 @@
     body { font-family: 'Inter', 'Padauk', sans-serif; }
     .mono-num { font-family: monospace; letter-spacing: 2px; }
 
-    /* PURE CSS THEME ENGINE - WORKS INSTANTLY ON MOBILE BROWSERS */
+    /* PURE CSS THEME ENGINE */
     :root, [data-theme="amber"] {
       --primary: #f59e0b;
       --primary-hover: #d97706;
@@ -68,11 +68,6 @@
     .theme-bg-soft {
       background-color: var(--primary-bg) !important;
     }
-    
-    /* Smooth accordion animation */
-    .collapsible-content {
-      transition: max-height 0.3s ease, opacity 0.3s ease;
-    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
@@ -95,7 +90,6 @@
 
       <!-- Actions -->
       <div id="authActions" class="hidden flex items-center gap-2">
-        <!-- Settings Button -->
         <button type="button" onclick="openSettingsModal()" title="Admin Settings" class="p-2 bg-slate-700 hover:bg-slate-600 theme-text-primary rounded-lg border border-slate-600 transition">
           <i data-lucide="settings" class="w-5 h-5"></i>
         </button>
@@ -177,7 +171,6 @@
 
       <!-- COLLAPSIBLE SECTION 1: PUBLISH DRAW CARD -->
       <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
-        <!-- Accordion Header -->
         <button type="button" onclick="toggleSection('drawSectionContent', 'drawArrowIcon')" class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-700/30 transition">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-xl theme-bg-soft theme-text-primary">
@@ -195,7 +188,6 @@
           </div>
         </button>
 
-        <!-- Accordion Content (Default OPEN) -->
         <div id="drawSectionContent" class="p-5 border-t border-slate-700 space-y-5">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-700/60">
             <p class="text-xs text-slate-400">ဤနေရာတွင် ထုတ်ပြန်လိုက်သော ဂဏန်းများသည် Agent များထံ တိုက်ရိုက်ရောက်ရှိမည်</p>
@@ -216,7 +208,6 @@
             </div>
           </div>
 
-          <!-- Main Winning Numbers Inputs -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-slate-900/90 p-4 rounded-xl border theme-border-primary">
               <label class="block text-xs font-bold theme-text-primary mb-1">ပထမဆု - သိန်း(၁၀၀၀)</label>
@@ -253,7 +244,6 @@
 
       <!-- COLLAPSIBLE SECTION 2: ANALYTICS CHARTS (BAR & PIE) -->
       <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
-        <!-- Accordion Header -->
         <button type="button" onclick="toggleSection('chartSectionContent', 'chartArrowIcon')" class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-700/30 transition">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-xl theme-bg-soft theme-text-primary">
@@ -269,10 +259,8 @@
           </div>
         </button>
 
-        <!-- Accordion Content (Default CLOSED on phone for cleanliness) -->
         <div id="chartSectionContent" class="hidden p-5 border-t border-slate-700">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Bar Chart -->
             <div class="space-y-2">
               <h3 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <i data-lucide="activity" class="w-4 h-4 theme-text-primary"></i>
@@ -283,7 +271,6 @@
               </div>
             </div>
 
-            <!-- Pie Chart -->
             <div class="space-y-2">
               <h3 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <i data-lucide="pie-chart" class="w-4 h-4 theme-text-primary"></i>
@@ -299,7 +286,6 @@
 
       <!-- COLLAPSIBLE SECTION 3: AGENT SALES BREAKDOWN TABLE -->
       <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
-        <!-- Accordion Header -->
         <button type="button" onclick="toggleSection('tableSectionContent', 'tableArrowIcon')" class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-700/30 transition">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-xl theme-bg-soft theme-text-primary">
@@ -315,7 +301,6 @@
           </div>
         </button>
 
-        <!-- Accordion Content (Default CLOSED on phone for cleanliness) -->
         <div id="tableSectionContent" class="hidden p-5 border-t border-slate-700 space-y-4">
           <div class="flex justify-end">
             <input type="text" id="agentSearchInput" onkeyup="filterAgentSalesTable()" placeholder="အဖွဲ့အမည် / UID ဖြင့် ရှာရန်..." class="w-full sm:w-64 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none theme-border-primary">
@@ -342,7 +327,7 @@
     </div>
   </main>
 
-  <!-- 3. ADMIN SETTINGS MODAL (THEME PALETTE + WHITELIST + TRANSFER) -->
+  <!-- 3. ADMIN SETTINGS MODAL (THEME PREVIEW + SAVE BUTTON + WHITELIST + TRANSFER) -->
   <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6">
       
@@ -356,28 +341,36 @@
         </button>
       </div>
 
-      <!-- SECTION 1: THEME COLOR PALETTE SWITCHER (INSTANT ON MOBILE) -->
+      <!-- SECTION 1: THEME COLOR SELECTION WITH EXPLICIT SAVE BUTTON -->
       <div class="bg-slate-900 p-4 rounded-xl border theme-border-primary space-y-3">
         <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
           <i data-lucide="palette" class="w-4 h-4 theme-text-primary"></i>
-          <span>Theme အရောင် ရွေးချယ်ရန် (Color Presets)</span>
+          <span>Theme အရောင် ရွေးချယ်ရန်</span>
         </h4>
-        <p class="text-xs text-slate-400">ဖုန်းပေါ်တွင် နှိပ်လိုက်သည်နှင့် ချက်ချင်း အရောင်လိုက်ပြောင်းပါမည်</p>
+        <p class="text-xs text-slate-400">အရောင်ရွေးချယ်ပြီးပါက အောက်ရှိ "Save (သတ်မှတ်ချက်များ သိမ်းဆည်းမည်)" ခလုတ်ကို နှိပ်ပါ</p>
         
         <div class="grid grid-cols-3 gap-2.5">
-          <button type="button" onclick="setAdminTheme('amber')" class="cursor-pointer flex items-center justify-center gap-2 p-2.5 rounded-lg border border-amber-500/50 bg-amber-500/15 hover:bg-amber-500/25 text-xs font-bold text-amber-400 active:scale-95 transition">
+          <button type="button" id="themeOpt_amber" onclick="previewTheme('amber')" class="cursor-pointer flex items-center justify-center gap-2 p-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-xs font-bold text-amber-400 active:scale-95 transition">
             <span class="w-3.5 h-3.5 rounded-full bg-amber-500 pointer-events-none"></span>
             <span class="pointer-events-none">Amber</span>
           </button>
           
-          <button type="button" onclick="setAdminTheme('emerald')" class="cursor-pointer flex items-center justify-center gap-2 p-2.5 rounded-lg border border-emerald-500/50 bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-bold text-emerald-400 active:scale-95 transition">
+          <button type="button" id="themeOpt_emerald" onclick="previewTheme('emerald')" class="cursor-pointer flex items-center justify-center gap-2 p-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-xs font-bold text-emerald-400 active:scale-95 transition">
             <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 pointer-events-none"></span>
             <span class="pointer-events-none">Emerald</span>
           </button>
           
-          <button type="button" onclick="setAdminTheme('cyan')" class="cursor-pointer flex items-center justify-center gap-2 p-2.5 rounded-lg border border-cyan-500/50 bg-cyan-500/15 hover:bg-cyan-500/25 text-xs font-bold text-cyan-400 active:scale-95 transition">
+          <button type="button" id="themeOpt_cyan" onclick="previewTheme('cyan')" class="cursor-pointer flex items-center justify-center gap-2 p-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-xs font-bold text-cyan-400 active:scale-95 transition">
             <span class="w-3.5 h-3.5 rounded-full bg-cyan-500 pointer-events-none"></span>
             <span class="pointer-events-none">Cyan</span>
+          </button>
+        </div>
+
+        <!-- EXPLICIT SAVE BUTTON FOR SETTINGS -->
+        <div class="pt-2 flex justify-end">
+          <button type="button" onclick="saveThemeSettings()" class="theme-btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>Save (သတ်မှတ်ချက်များ သိမ်းဆည်းမည်)</span>
           </button>
         </div>
       </div>
@@ -412,7 +405,6 @@
           </button>
         </form>
 
-        <!-- Approved Agents List Table -->
         <div class="max-h-48 overflow-y-auto border border-slate-700 rounded-xl">
           <table class="w-full text-left text-xs text-slate-300">
             <thead class="bg-slate-900 text-slate-400 sticky top-0">
@@ -432,24 +424,24 @@
     </div>
   </div>
 
-  <!-- 4. DIRECT BOTTOM PWA INSTALL BANNER (AUTOMATIC FOR MOBILE) -->
-  <div id="pwaDirectBanner" class="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-slate-800/95 border-2 theme-border-primary p-4 rounded-2xl shadow-2xl backdrop-blur-md z-50 hidden transition-all duration-300">
-    <div class="flex items-start gap-3">
-      <div class="w-10 h-10 rounded-xl theme-btn-primary flex items-center justify-center shrink-0">
-        <i data-lucide="download" class="w-5 h-5 text-slate-950"></i>
+  <!-- 4. DIRECT AUTO POPUP MODAL (WEBPAGE ထဲ စဝင်သည်နှင့် တန်းပေါ်မည့် AUTO INSTALL MODAL) -->
+  <div id="pwaAutoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border-2 theme-border-primary rounded-3xl w-full max-w-sm p-6 text-center space-y-4 shadow-2xl animate-bounce-short">
+      <div class="w-16 h-16 rounded-2xl theme-btn-primary flex items-center justify-center mx-auto shadow-xl">
+        <i data-lucide="download" class="w-8 h-8 text-slate-950"></i>
       </div>
-      <div class="flex-grow">
-        <h4 class="text-sm font-bold text-white">ထောက်ပို့ထီ Admin App သွင်းမည်လား?</h4>
-        <p class="text-xs text-slate-300 mt-0.5">ဖုန်း Home Screen ပေါ်တွင် Browser မလိုဘဲ သီးသန့် အလွယ်တကူ အသုံးပြုနိုင်ပါသည်</p>
-        
-        <div class="flex items-center gap-2 mt-3">
-          <button type="button" onclick="triggerPWAInstall()" class="theme-btn-primary px-4 py-2 rounded-xl text-xs font-bold shadow-md transition">
-            အခုပဲ Install သွင်းမည်
-          </button>
-          <button type="button" onclick="dismissPWABanner()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2 rounded-xl text-xs font-medium transition">
-            ခဏထားပါ
-          </button>
-        </div>
+      <div>
+        <h3 class="text-base font-bold text-white">ထောက်ပို့ထီ Admin App သွင်းရန်</h3>
+        <p class="text-xs text-slate-300 mt-1">ဖုန်း Home Screen ပေါ်တွင် App အဖြစ် ထည့်သွင်းအသုံးပြုပါက ပိုမိုမြန်ဆန်ပြီး လုံခြုံမှုရှိပါသည်</p>
+      </div>
+
+      <div class="space-y-2 pt-2">
+        <button type="button" onclick="triggerPWAInstall()" class="w-full theme-btn-primary py-3 rounded-xl text-xs font-bold shadow-lg transition">
+          အခုပဲ Install တင်မည်
+        </button>
+        <button type="button" onclick="dismissPWAAutoModal()" class="w-full bg-slate-700/80 hover:bg-slate-700 text-slate-400 hover:text-white py-2.5 rounded-xl text-xs font-medium transition">
+          ခဏထားပါ
+        </button>
       </div>
     </div>
   </div>
@@ -479,59 +471,86 @@
     let pieChartInstance = null;
     let agentSalesAggregated = [];
     let deferredPrompt = null;
+    let selectedTempTheme = "amber";
 
-    // 2. MOBILE ACCORDION (COLLAPSIBLE SECTIONS) ENGINE
+    // 2. MOBILE ACCORDION ENGINE
     function toggleSection(contentId, iconId) {
       const content = document.getElementById(contentId);
       const icon = document.getElementById(iconId);
       
       if (content.classList.contains('hidden')) {
         content.classList.remove('hidden');
-        if (icon) {
-          icon.setAttribute('data-lucide', 'chevron-up');
-        }
+        if (icon) icon.setAttribute('data-lucide', 'chevron-up');
       } else {
         content.classList.add('hidden');
-        if (icon) {
-          icon.setAttribute('data-lucide', 'chevron-down');
-        }
+        if (icon) icon.setAttribute('data-lucide', 'chevron-down');
       }
       lucide.createIcons();
     }
 
-    // 3. THEME COLOR ENGINE (SAFE & REACTIVE ON PHONES)
+    // 3. THEME SELECTION & EXPLICIT SAVE ENGINE
     function initAdminTheme() {
       const savedTheme = localStorage.getItem('thaukpo_admin_theme') || 'amber';
-      setAdminTheme(savedTheme, false);
+      applyThemeToDOM(savedTheme);
+      selectedTempTheme = savedTheme;
     }
 
-    function setAdminTheme(themeName, save = true) {
+    function previewTheme(themeName) {
+      selectedTempTheme = themeName;
+      ['amber', 'emerald', 'cyan'].forEach(t => {
+        const btn = document.getElementById('themeOpt_' + t);
+        if (btn) {
+          if (t === themeName) {
+            btn.classList.add('ring-2', 'ring-white', 'border-white');
+          } else {
+            btn.classList.remove('ring-2', 'ring-white', 'border-white');
+          }
+        }
+      });
+      applyThemeToDOM(themeName);
+    }
+
+    function saveThemeSettings() {
+      localStorage.setItem('thaukpo_admin_theme', selectedTempTheme);
+      applyThemeToDOM(selectedTempTheme);
+      alert('သတ်မှတ်ချက်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ!');
+      closeSettingsModal();
+    }
+
+    function applyThemeToDOM(themeName) {
       document.documentElement.setAttribute('data-theme', themeName);
-      if (save) localStorage.setItem('thaukpo_admin_theme', themeName);
-      
       try {
         updateChartColors(themeName);
-      } catch (e) {
-        // Safe check
-      }
+      } catch (e) {}
     }
 
     initAdminTheme();
     lucide.createIcons();
 
-    // 4. DIRECT PWA INSTALL BANNER ENGINE
+    // 4. DIRECT AUTO POPUP & PWA INSTALL LOGIC
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration skipped'));
       });
     }
 
+    // Auto popup as soon as user visits website
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const isDismissed = sessionStorage.getItem('pwa_auto_prompt_dismissed');
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        if (!isDismissed && !isStandalone) {
+          const autoModal = document.getElementById('pwaAutoModal');
+          if (autoModal) autoModal.classList.remove('hidden');
+        }
+      }, 1000);
+    });
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      // Show direct bottom banner automatically on phone
-      const banner = document.getElementById('pwaDirectBanner');
-      if (banner) banner.classList.remove('hidden');
+      const autoModal = document.getElementById('pwaAutoModal');
+      if (autoModal) autoModal.classList.remove('hidden');
     });
 
     function triggerPWAInstall() {
@@ -539,17 +558,19 @@
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
-            document.getElementById('pwaDirectBanner').classList.add('hidden');
+            dismissPWAAutoModal();
           }
           deferredPrompt = null;
         });
       } else {
-        alert("ဖုန်း Browser Menu ထဲရှိ 'Install app' သို့မဟုတ် 'Add to Home screen' ကို ရွေးပေးနိုင်ပါသည်");
+        alert("ဖုန်း Browser ၏ Menu (၃ စက်) ထဲရှိ 'Install app' သို့မဟုတ် 'Add to Home screen' ကို ရွေးချယ်ပေးပါ");
+        dismissPWAAutoModal();
       }
     }
 
-    function dismissPWABanner() {
-      document.getElementById('pwaDirectBanner').classList.add('hidden');
+    function dismissPWAAutoModal() {
+      document.getElementById('pwaAutoModal').classList.add('hidden');
+      sessionStorage.setItem('pwa_auto_prompt_dismissed', 'true');
     }
 
     // 5. AUTH STATE LISTENER & DYNAMIC ADMIN CHECK
@@ -567,7 +588,6 @@
             return;
           }
 
-          // Verified Admin UI
           document.getElementById('loginScreen').classList.add('hidden');
           document.getElementById('adminDashboard').classList.remove('hidden');
           document.getElementById('authActions').classList.remove('hidden');
@@ -825,6 +845,7 @@
     function openSettingsModal() {
       document.getElementById('settingsModal').classList.remove('hidden');
       document.getElementById('newAdminEmailInput').value = currentAdminEmail;
+      previewTheme(localStorage.getItem('thaukpo_admin_theme') || 'amber');
       lucide.createIcons();
     }
 
