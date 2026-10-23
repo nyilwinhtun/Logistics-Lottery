@@ -396,7 +396,7 @@
     </div>
   </main>
 
-  <!-- 3. AGENT SETTINGS MODAL (THEME PREVIEW + SAVE BUTTON) -->
+  <!-- 3. AGENT SETTINGS MODAL -->
   <div id="agentSettingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-700 pb-3">
@@ -435,7 +435,6 @@
         </button>
       </div>
 
-      <!-- EXPLICIT SAVE BUTTON -->
       <div class="pt-2 flex justify-end">
         <button type="button" onclick="saveAgentThemeSettings()" class="theme-btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition">
           <i data-lucide="save" class="w-4 h-4"></i>
@@ -445,7 +444,7 @@
     </div>
   </div>
 
-  <!-- 4. DIRECT ONE-CLICK INSTALL BANNER (စဖွင့်ကတည်းက အမြဲတမ်း တန်းပေါ်နေမည့် အပိုင်း) -->
+  <!-- 4. DIRECT ONE-CLICK INSTALL BANNER (စဖွင့်ကတည်းက အမြဲတန်းပေါ်နေမည့် အပိုင်း) -->
   <div id="directHomeInstallBanner" class="fixed bottom-4 left-4 right-4 max-w-sm mx-auto bg-slate-800/95 border-2 theme-border-primary p-3 rounded-2xl shadow-2xl backdrop-blur-md z-50 flex items-center justify-between gap-3 transition-all duration-300">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-xl theme-btn-primary flex items-center justify-center shrink-0">
@@ -496,7 +495,7 @@
     let dailyChartInstance = null;
     let selectedTempTheme = "emerald";
 
-    // 2. ONE-CLICK DIRECT INSTALL ENGINE (NO RELOAD / PURE NATIVE PROMPT)
+    // 2. ONE-CLICK DIRECT INSTALL ENGINE
     let deferredPrompt = null;
 
     if ('serviceWorker' in navigator) {
@@ -505,7 +504,7 @@
       });
     }
 
-    // Capture Browser Native Install Event
+    // Capture Native Prompt Event
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -513,16 +512,18 @@
       if (banner) banner.classList.remove('hidden');
     });
 
-    // Standalone Mode စစ်ဆေးခြင်း (ဖုန်းထဲသွင်းပြီးပါက Banner အလိုအလျောက် ပျောက်မည်)
+    // Standalone စစ်ဆေးခြင်း
     window.addEventListener('DOMContentLoaded', () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
       const banner = document.getElementById('directHomeInstallBanner');
       if (isStandalone && banner) {
         banner.classList.add('hidden');
+      } else if (banner) {
+        banner.classList.remove('hidden');
       }
     });
 
-    // "တင်မည်" နှိပ်လိုက်သည်နှင့် Page Reload မဖြစ်စေဘဲ Native Prompt တိုက်ရိုက်ဆွဲထုတ်ခြင်း
+    // "တင်မည်" နှိပ်လိုက်သည်နှင့် တိုက်ရိုက်ခေါ်ခြင်း
     async function executeDirectHomeInstall(e) {
       if (e) {
         e.preventDefault();
@@ -535,9 +536,12 @@
         deferredPrompt.prompt();
         const choiceResult = await deferredPrompt.userChoice;
         if (choiceResult && choiceResult.outcome === 'accepted') {
-          dismissHomeBanner();
+          if (banner) banner.classList.add('hidden');
         }
         deferredPrompt = null;
+      } else {
+        // Event ခေတ္တမရောက်သေးချိန်၌ Chrome Native Menu ကို အသုံးပြုရန် လမ်းညွှန်ချက်ပြသခြင်း
+        alert("ဖုန်း Browser ၏ အပေါ်ဘက် ညာဘက်ထောင့် အစက်သုံးစက် (⋮) ကို နှိပ်ပြီး 'Install app' သို့မဟုတ် 'Add to Home screen' ကို ရွေးချယ်နိုင်ပါသည်");
       }
     }
 
@@ -1015,7 +1019,7 @@
       document.getElementById('winSummaryText').innerText = `စုစုပေါင်း (${detectedWinners.length}) ဆု ကံထူးပါသည်`;
     }
 
-    // 13. WEB BLUETOOTH THERMAL PRINTER (58mm ESC/POS)
+    // 13. WEB BLUETOOTH THERMAL PRINTER
     async function printViaBluetooth() {
       if (detectedWinners.length === 0) {
         alert('ပရင့်ထုတ်ရန် ပေါက်မဲစာရင်း မရှိသေးပါ');
