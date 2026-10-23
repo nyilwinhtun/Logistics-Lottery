@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="my" data-theme="amber">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ထောက်ပို့ထီ - ဗဟိုပင်မ စီမံခန့်ခွဲမှုစနစ် (Admin)</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase SDKs (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+    body { font-family: 'Inter', 'Padauk', sans-serif; }
+    .mono-num { font-family: monospace; letter-spacing: 2px; }
+
+    /* DYNAMIC CSS VARIABLES FOR THEMES */
+    :root[data-theme="amber"] {
+      --primary: #f59e0b;
+      --primary-hover: #d97706;
+      --primary-bg: rgba(245, 158, 11, 0.15);
+      --primary-border: rgba(245, 158, 11, 0.4);
+      --primary-text: #fbbf24;
+    }
+    :root[data-theme="emerald"] {
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-bg: rgba(16, 185, 129, 0.15);
+      --primary-border: rgba(16, 185, 129, 0.4);
+      --primary-text: #34d399;
+    }
+    :root[data-theme="cyan"] {
+      --primary: #06b6d4;
+      --primary-hover: #0891b2;
+      --primary-bg: rgba(6, 182, 212, 0.15);
+      --primary-border: rgba(6, 182, 212, 0.4);
+      --primary-text: #22d3ee;
+    }
+
+    .theme-btn-primary {
+      background-color: var(--primary);
+      transition: background-color 0.2s;
+    }
+    .theme-btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    .theme-text-primary {
+      color: var(--primary-text);
+    }
+    .theme-border-primary {
+      border-color: var(--primary-border);
+    }
+    .theme-bg-soft {
+      background-color: var(--primary-bg);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+  <!-- TOP HEADER -->
+  <header class="bg-slate-800/90 border-b theme-border-primary sticky top-0 z-40 backdrop-blur-md transition-colors duration-300">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl theme-btn-primary flex items-center justify-center shadow-lg font-bold text-xl text-slate-900">
+          ဗ
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-white flex items-center gap-2">
+            ဗဟိုပင်မ ထီစီမံခန့်ခွဲရေး (Admin)
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium theme-bg-soft theme-text-primary border theme-border-primary">Master</span>
+          </h1>
+          <p id="headerStatus" class="text-xs text-slate-400">Firebase ချိတ်ဆက်နေသည်...</p>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div id="authActions" class="hidden flex items-center gap-2">
+        <!-- PWA Install Prompt Button -->
+        <button id="pwaInstallBtn" onclick="installPWA()" class="hidden px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-semibold theme-text-primary rounded-lg border border-slate-600 flex items-center gap-1.5 transition">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>App သွင်းရန်</span>
+        </button>
+
+        <!-- Settings Button -->
+        <button onclick="openSettingsModal()" title="Admin Settings" class="p-2 bg-slate-700 hover:bg-slate-600 theme-text-primary rounded-lg border border-slate-600 transition">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-2 bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-600">
+          <i data-lucide="shield" class="w-4 h-4 theme-text-primary"></i>
+          <span id="adminEmailDisplay" class="text-xs font-medium text-slate-200"></span>
+          <button onclick="handleLogout()" class="text-xs text-red-400 hover:text-red-300 ml-2 font-semibold">ထွက်မည်</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="max-w-6xl mx-auto p-4 w-full flex-grow space-y-6">
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="loginScreen" class="max-w-md mx-auto my-12 bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 theme-bg-soft theme-text-primary rounded-2xl mx-auto flex items-center justify-center mb-3">
+          <i data-lucide="crown" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-xl font-bold text-white">Admin စနစ်သို့ ဝင်ရောက်ပါ</h2>
+        <p class="text-xs text-slate-400 mt-1">ဗဟိုခွင့်ပြုချက်ရ အီးမေးလ်ဖြင့်သာ ဝင်ရောက်နိုင်ပါသည်</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Admin အီးမေးလ် (Gmail)</label>
+          <input type="email" id="loginEmail" required placeholder="admin@gmail.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">စကားဝှက် (Password)</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        </div>
+        <button type="submit" id="loginBtn" class="w-full theme-btn-primary text-slate-950 font-bold py-2.5 rounded-lg text-sm shadow-lg transition flex items-center justify-center gap-2">
+          <span>စနစ်သို့ ဝင်မည်</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+        <p id="loginError" class="text-xs text-red-400 text-center hidden"></p>
+      </form>
+    </div>
+
+    <!-- 2. ADMIN DASHBOARD -->
+    <div id="adminDashboard" class="hidden space-y-6">
+
+      <!-- TOP OVERALL KPI STATS CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+          <div class="p-3 rounded-lg theme-bg-soft theme-text-primary">
+            <i data-lucide="ticket" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">စုစုပေါင်း ရောင်းချပြီးစောင်ရေ</p>
+            <p id="kpiTotalTickets" class="text-xl font-bold text-white mono-num">၀ စောင်</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+          <div class="p-3 rounded-lg bg-emerald-500/20 text-emerald-400">
+            <i data-lucide="banknote" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">စုစုပေါင်း ရောင်းရငွေ (ခန့်မှန်း ၂,၀၀၀ကျပ်)</p>
+            <p id="kpiTotalRevenue" class="text-xl font-bold text-emerald-400 mono-num">၀ ကျပ်</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+          <div class="p-3 rounded-lg bg-blue-500/20 text-blue-400">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">တက်ကြွစွာ ရောင်းချနေသော Agent</p>
+            <p id="kpiActiveAgents" class="text-xl font-bold text-blue-400 mono-num">၀ ဖွဲ့</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS CHARTS SECTION (PIE CHART & BAR GRAPH) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Bar Graph: Top Agents by Sales -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 theme-text-primary"></i>
+            <span>ကိုယ်စားလှယ်အလိုက် ရောင်းအား နှိုင်းယှဉ်ချက် (Top Agents)</span>
+          </h3>
+          <div class="h-64 relative">
+            <canvas id="agentBarChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Pie Chart: Regional/Unit Market Share -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 theme-text-primary"></i>
+            <span>ဒေသ / တပ်ဖွဲ့အလိုက် ရောင်းအားဝေစု (Market Share %)</span>
+          </h3>
+          <div class="h-64 relative flex items-center justify-center">
+            <canvas id="regionPieChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGENT SALES BREAKDOWN TABLE -->
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="list-ordered" class="w-4 h-4 theme-text-primary"></i>
+              <span>ကိုယ်စားလှယ်များ၏ အသေးစိတ် ရောင်းအားစာရင်း</span>
+            </h3>
+            <p class="text-xs text-slate-400">Agent တစ်ဖွဲ့ချင်းစီ၏ လက်မှတ်စောင်ရေနှင့် ခန့်မှန်းရောင်းရငွေ အခြေအနေ</p>
+          </div>
+          <input type="text" id="agentSearchInput" onkeyup="filterAgentSalesTable()" placeholder="အဖွဲ့အမည် / Gmail ဖြင့် ရှာရန်..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none theme-border-primary">
+        </div>
+
+        <div class="overflow-x-auto max-h-64 overflow-y-auto border border-slate-700/80 rounded-xl">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 sticky top-0">
+              <tr>
+                <th class="p-3">တပ်ဖွဲ့ / ဒေသအမည်</th>
+                <th class="p-3">Agent အီးမေးလ်</th>
+                <th class="p-3 text-right">ရောင်းချပြီး အစောင်ရေ</th>
+                <th class="p-3 text-right">ခန့်မှန်းရောင်းရငွေ (ကျပ်)</th>
+              </tr>
+            </thead>
+            <tbody id="agentSalesTableBody" class="divide-y divide-slate-700">
+              <tr><td colspan="4" class="p-4 text-center text-slate-500">ရောင်းအား အချက်အလက် မရှိသေးပါ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DRAW PUBLISHING CARD -->
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-700 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="award" class="w-5 h-5 theme-text-primary"></i>
+              <span>ထီပေါက်စဉ် တရားဝင် ထုတ်ပြန်ခြင်း</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">ဤနေရာတွင် ထုတ်ပြန်လိုက်သော ဂဏန်းများသည် Agent များ၏ အလိုအလျောက် တိုက်စစ်စနစ်ဆီသို့ တိုက်ရိုက်ရောက်ရှိမည်</p>
+          </div>
+          <button onclick="publishDrawResults()" id="publishBtn" class="theme-btn-primary text-slate-950 px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg transition">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>ပေါက်စဉ် ထုတ်ပြန်မည်</span>
+          </button>
+        </div>
+
+        <!-- Draw Metadata Inputs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">အကြိမ်ရေ အမည်</label>
+            <input type="text" id="drawTitle" placeholder="( ၃၃ ) ကြိမ်မြောက် ထီပေါက်စဉ်" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none theme-border-primary">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">ကာလ / လ</label>
+            <input type="text" id="drawMonth" placeholder="စက်တင်ဘာလ ၂၀၂၆" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none theme-border-primary">
+          </div>
+        </div>
+
+        <!-- Main Winning Numbers Inputs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-slate-900/90 p-4 rounded-xl border theme-border-primary">
+            <label class="block text-xs font-bold theme-text-primary mb-1">ပထမဆု - သိန်း(၁၀၀၀)</label>
+            <input type="text" id="prize1" maxlength="7" placeholder="0182902" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 mono-num text-base font-bold text-white text-center focus:outline-none theme-border-primary">
+            <span class="text-[10px] text-slate-400 block mt-1 text-center">ဂဏန်း ၇ လုံး</span>
+          </div>
+
+          <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700">
+            <label class="block text-xs font-bold text-slate-300 mb-1">ဒုတိယဆု - သိန်း(၂၀၀)</label>
+            <input type="text" id="prize2" maxlength="7" placeholder="0364641" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 mono-num text-base font-bold text-white text-center focus:outline-none theme-border-primary">
+            <span class="text-[10px] text-slate-400 block mt-1 text-center">ဂဏန်း ၇ လုံး</span>
+          </div>
+
+          <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700">
+            <label class="block text-xs font-bold text-slate-300 mb-1">တတိယဆု - သိန်း(၁၀၀)</label>
+            <input type="text" id="prize3" maxlength="7" placeholder="0384042" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 mono-num text-base font-bold text-white text-center focus:outline-none theme-border-primary">
+            <span class="text-[10px] text-slate-400 block mt-1 text-center">ဂဏန်း ၇ လုံး</span>
+          </div>
+
+          <div class="bg-slate-900/90 p-4 rounded-xl border border-blue-500/30">
+            <label class="block text-xs font-bold text-blue-400 mb-1">အထူးဆု - (၁၀) သိန်း</label>
+            <input type="text" id="prizeSpecial" maxlength="5" placeholder="25388" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 mono-num text-base font-bold text-white text-center focus:outline-none focus:border-blue-400">
+            <span class="text-[10px] text-slate-400 block mt-1 text-center">နောက်ဆုံး ၅ လုံးတူ</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/80 text-xs text-slate-400 space-y-1">
+          <p class="font-semibold text-slate-300">အလိုအလျောက် တွက်ချက်မည့် စည်းမျဉ်းများ -</p>
+          <p>• ဆုကြီး ၃ ဆု၏ +/- ၁ တူဆု (၃ သိန်း)၊ နောက်ဆုံး ၅ လုံးတူ (၃ သိန်း)၊ ၄ လုံးတူ (၅ သောင်း)၊ ၃ လုံးတူ (၂ သောင်း)</p>
+          <p>• ပထမဆုကြီး၏ နောက်ဆုံး ၂ လုံးတူ (၁ သောင်း) များကို Agent App ဘက်မှ အလိုအလျောက် တိုက်စစ်ပေးမည် ဖြစ်ပါသည်</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 3. ADMIN SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-6">
+      
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="settings" class="w-5 h-5 theme-text-primary"></i>
+          <span>Admin စီမံခန့်ခွဲမှုစနစ်</span>
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- SECTION 1: THEME COLOR PALETTE SWITCHER -->
+      <div class="bg-slate-900 p-4 rounded-xl border theme-border-primary space-y-3">
+        <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="palette" class="w-4 h-4 theme-text-primary"></i>
+          <span>Theme အရောင် ရွေးချယ်ရန် (Color Presets)</span>
+        </h4>
+        <p class="text-xs text-slate-400">မိမိမျက်စိနှင့် သင့်တော်ရာ Theme အရောင်ကို ရွေးချယ်နိုင်ပါသည်</p>
+        
+        <div class="grid grid-cols-3 gap-2.5">
+          <button onclick="setTheme('amber')" class="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400">
+            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+            <span>Amber Gold</span>
+          </button>
+          <button onclick="setTheme('emerald')" class="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold text-emerald-400">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <span>Emerald Green</span>
+          </button>
+          <button onclick="setTheme('cyan')" class="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-xs font-bold text-cyan-400">
+            <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
+            <span>Ocean Cyan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SECTION 2: TRANSFER ADMIN GMAIL -->
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+        <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+          <i data-lucide="user-check" class="w-4 h-4 theme-text-primary"></i>
+          <span>Admin Gmail လွှဲပြောင်းရန်</span>
+        </h4>
+        <p class="text-xs text-slate-400">Gmail အသစ် ထည့်သွင်းပြီး သိမ်းဆည်းလိုက်ပါက Admin တာဝန်ကို ချက်ချင်း လွှဲပြောင်းသွားမည် ဖြစ်ပါသည်</p>
+        <div class="flex gap-2">
+          <input type="email" id="newAdminEmailInput" placeholder="newadmin@gmail.com" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <button onclick="transferAdminRole()" class="theme-btn-primary text-slate-950 font-bold px-4 py-2 rounded-lg text-xs shrink-0">လွှဲပြောင်းမည်</button>
+        </div>
+      </div>
+
+      <!-- SECTION 3: AGENT WHITELIST MANAGEMENT -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="users" class="w-4 h-4 theme-text-primary"></i>
+          <span>ခွင့်ပြုထားသော Agent စာရင်း စီမံခန့်ခွဲရန်</span>
+        </h4>
+
+        <!-- Add Agent Form -->
+        <form onsubmit="addApprovedAgent(event)" class="bg-slate-900 p-3 rounded-xl border border-slate-700 grid grid-cols-1 sm:grid-cols-5 gap-2">
+          <input type="email" id="agentEmailInput" required placeholder="Agent Gmail (ဥပမာ- kpl@gmail.com)" class="sm:col-span-3 bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white">
+          <input type="text" id="agentUnitInput" required placeholder="တပ်ဖွဲ့/ဒေသ အမည်" class="sm:col-span-2 bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white">
+          <button type="submit" class="sm:col-span-5 theme-btn-primary text-slate-950 font-bold py-1.5 rounded text-xs flex items-center justify-center gap-1">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span>Agent အသစ် အတည်ပြု စာရင်းသွင်းမည်</span>
+          </button>
+        </form>
+
+        <!-- Approved Agents List Table -->
+        <div class="max-h-48 overflow-y-auto border border-slate-700 rounded-xl">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 sticky top-0">
+              <tr>
+                <th class="p-2.5">Agent Gmail</th>
+                <th class="p-2.5">ဒေသ/တပ်ဖွဲ့</th>
+                <th class="p-2.5 text-right">ဖျက်ရန်</th>
+              </tr>
+            </thead>
+            <tbody id="agentTableBody" class="divide-y divide-slate-700 bg-slate-800/60">
+              <tr><td colspan="3" class="p-4 text-center text-slate-500">စာရင်း မရှိသေးပါ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-slate-500 border-t border-slate-800">
+    ထောက်ပို့ထီ ဗဟိုပင်မ စီမံခန့်ခွဲမှုစနစ် (Admin Module)
+  </footer>
+
+  <script>
+    // 1. FIREBASE CONFIGURATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyAa8rUe53xWOs9vLmErdnAdd6QzVafYE5I",
+      authDomain: "logistics-lottey.firebaseapp.com",
+      projectId: "logistics-lottey",
+      storageBucket: "logistics-lottey.firebasestorage.app",
+      messagingSenderId: "455028187364",
+      appId: "1:455028187364:web:b20df40117b5d2e7f48cf1",
+      measurementId: "G-F8F2J05YB7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentAdminEmail = "";
+    let approvedAgentsList = [];
+    let barChartInstance = null;
+    let pieChartInstance = null;
+    let agentSalesAggregated = [];
+    let deferredPrompt = null;
+
+    // 2. THEME COLOR ENGINE
+    function initTheme() {
+      const savedTheme = localStorage.getItem('thaukpo_theme') || 'amber';
+      setTheme(savedTheme, false);
+    }
+
+    function setTheme(themeName, save = true) {
+      document.documentElement.setAttribute('data-theme', themeName);
+      if (save) localStorage.setItem('thaukpo_theme', themeName);
+      if (barChartInstance && pieChartInstance) {
+        updateChartColors(themeName);
+      }
+    }
+
+    initTheme();
+    lucide.createIcons();
+
+    // 3. PWA SERVICE WORKER & INSTALL PROMPT
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration skipped'));
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) installBtn.classList.remove('hidden');
+    });
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            document.getElementById('pwaInstallBtn').classList.add('hidden');
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+
+    // 4. AUTH STATE LISTENER & DYNAMIC ADMIN CHECK
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const adminDoc = await db.collection('settings').doc('admin_config').get();
+          if (adminDoc.exists) {
+            currentAdminEmail = adminDoc.data().admin_email || "";
+          }
+
+          if (user.email.toLowerCase() !== currentAdminEmail.toLowerCase()) {
+            alert("ဤအကောင့်သည် Admin လုပ်ပိုင်ခွင့် မရှိပါ။ ထွက်ပါမည်။");
+            await auth.signOut();
+            return;
+          }
+
+          // Verified Admin UI
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('adminDashboard').classList.remove('hidden');
+          document.getElementById('authActions').classList.remove('hidden');
+          document.getElementById('adminEmailDisplay').innerText = user.email;
+          document.getElementById('headerStatus').innerText = "စနစ် ချိတ်ဆက်ထားသည်";
+
+          fetchLatestDraw();
+          listenToApprovedAgents();
+          listenToOverallAnalytics();
+        } catch (err) {
+          alert("Admin စစ်ဆေးရာတွင် အမှားဖြစ်ပေါ်ပါသည်: " + err.message);
+          await auth.signOut();
+        }
+      } else {
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('authActions').classList.add('hidden');
+        document.getElementById('headerStatus').innerText = "အကောင့်ဝင်ရန် လိုအပ်ပါသည်";
+      }
+      lucide.createIcons();
+    });
+
+    // 5. LOGIN & LOGOUT
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      const errEl = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+
+      try {
+        errEl.classList.add('hidden');
+        btn.disabled = true;
+        btn.innerText = "စစ်ဆေးနေသည်...";
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (err) {
+        errEl.innerText = "အီးမေးလ် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်: " + err.message;
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>စနစ်သို့ ဝင်မည်</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>';
+        lucide.createIcons();
+      }
+    }
+
+    async function handleLogout() {
+      await auth.signOut();
+    }
+
+    // 6. OVERALL ANALYTICS & SALES BREAKDOWN ENGINE
+    function listenToOverallAnalytics() {
+      db.collection('tickets').onSnapshot(snap => {
+        let totalCount = 0;
+        let agentMap = {};
+
+        snap.forEach(doc => {
+          const t = doc.data();
+          let count = 1;
+          if (t.type === 'range') {
+            const s = parseInt(t.range_start);
+            const e = parseInt(t.range_end);
+            if (!isNaN(s) && !isNaN(e) && e >= s) {
+              count = (e - s) + 1;
+            }
+          }
+
+          totalCount += count;
+          const agentKey = t.owner_uid || t.unit || 'Unknown';
+          
+          if (!agentMap[agentKey]) {
+            agentMap[agentKey] = {
+              unit: t.unit || 'အမည်မဖော်ပြထားသော အဖွဲ့',
+              count: 0,
+              uid: t.owner_uid
+            };
+          }
+          agentMap[agentKey].count += count;
+        });
+
+        // Update Overall KPI Cards
+        document.getElementById('kpiTotalTickets').innerText = totalCount.toLocaleString() + ' စောင်';
+        document.getElementById('kpiTotalRevenue').innerText = (totalCount * 2000).toLocaleString() + ' ကျပ်';
+        
+        const activeAgentsCount = Object.keys(agentMap).length;
+        document.getElementById('kpiActiveAgents').innerText = activeAgentsCount + ' ဖွဲ့';
+
+        // Prepare Data for Charts and Table
+        agentSalesAggregated = Object.values(agentMap).sort((a, b) => b.count - a.count);
+        renderAgentSalesTable(agentSalesAggregated);
+        renderCharts(agentSalesAggregated);
+      });
+    }
+
+    function renderAgentSalesTable(salesData) {
+      const tbody = document.getElementById('agentSalesTableBody');
+      tbody.innerHTML = '';
+
+      if (salesData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">ရောင်းအား အချက်အလက် မရှိသေးပါ</td></tr>';
+        return;
+      }
+
+      salesData.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-700/40';
+        tr.innerHTML = `
+          <td class="p-3 font-semibold text-white">${item.unit}</td>
+          <td class="p-3 text-slate-400 font-mono text-[11px]">${item.uid || '-'}</td>
+          <td class="p-3 text-right font-bold theme-text-primary mono-num">${item.count.toLocaleString()} စောင်</td>
+          <td class="p-3 text-right font-semibold text-emerald-400 mono-num">${(item.count * 2000).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterAgentSalesTable() {
+      const query = document.getElementById('agentSearchInput').value.toLowerCase();
+      const filtered = agentSalesAggregated.filter(x => 
+        x.unit.toLowerCase().includes(query) || (x.uid && x.uid.toLowerCase().includes(query))
+      );
+      renderAgentSalesTable(filtered);
+    }
+
+    // 7. CHART.JS RENDERING (BAR & PIE)
+    function renderCharts(salesData) {
+      const topAgents = salesData.slice(0, 7);
+      const labels = topAgents.map(x => x.unit);
+      const dataValues = topAgents.map(x => x.count);
+
+      const activeTheme = document.documentElement.getAttribute('data-theme') || 'amber';
+      let themePrimary = '#f59e0b';
+      if (activeTheme === 'emerald') themePrimary = '#10b981';
+      if (activeTheme === 'cyan') themePrimary = '#06b6d4';
+
+      // Bar Chart
+      const barCtx = document.getElementById('agentBarChart').getContext('2d');
+      if (barChartInstance) barChartInstance.destroy();
+
+      barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: labels.length ? labels : ['ဒေတာ မရှိသေးပါ'],
+          datasets: [{
+            label: 'ရောင်းချပြီး လက်မှတ်စောင်ရေ',
+            data: dataValues.length ? dataValues : [0],
+            backgroundColor: themePrimary,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { family: 'Padauk' } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+          }
+        }
+      });
+
+      // Pie Chart
+      const pieCtx = document.getElementById('regionPieChart').getContext('2d');
+      if (pieChartInstance) pieChartInstance.destroy();
+
+      pieChartInstance = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: labels.length ? labels : ['ဒေတာ မရှိသေးပါ'],
+          datasets: [{
+            data: dataValues.length ? dataValues : [1],
+            backgroundColor: [
+              '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6', '#ec4899', '#f97316', '#64748b'
+            ],
+            borderWidth: 2,
+            borderColor: '#1e293b'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#cbd5e1', font: { family: 'Padauk', size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChartColors(themeName) {
+      if (!barChartInstance) return;
+      let color = '#f59e0b';
+      if (themeName === 'emerald') color = '#10b981';
+      if (themeName === 'cyan') color = '#06b6d4';
+      barChartInstance.data.datasets[0].backgroundColor = color;
+      barChartInstance.update();
+    }
+
+    // 8. PUBLISH DRAW RESULTS
+    async function publishDrawResults() {
+      const p1 = document.getElementById('prize1').value.trim();
+      const p2 = document.getElementById('prize2').value.trim();
+      const p3 = document.getElementById('prize3').value.trim();
+      const ps = document.getElementById('prizeSpecial').value.trim();
+      const title = document.getElementById('drawTitle').value.trim();
+      const month = document.getElementById('drawMonth').value.trim();
+
+      if (!p1 || !p2 || !p3 || !ps) {
+        alert("ဆုကြီး ၃ ဆုနှင့် အထူးဆု ဂဏန်းများ ပြည့်စုံစွာ ဖြည့်ပေးပါ");
+        return;
+      }
+
+      if (p1.length !== 7 || p2.length !== 7 || p3.length !== 7 || ps.length !== 5) {
+        alert("ပထမ၊ ဒုတိယ၊ တတိယဆုများသည် ဂဏန်း ၇ လုံးဖြစ်ပြီး အထူးဆုသည် ဂဏန်း ၅ လုံး ဖြစ်ရပါမည်");
+        return;
+      }
+
+      const btn = document.getElementById('publishBtn');
+      try {
+        btn.disabled = true;
+        btn.innerText = "ထုတ်ပြန်နေသည်...";
+
+        await db.collection('draws').doc('latest_draw').set({
+          title: title || "( ၃၃ ) ကြိမ်မြောက် ထီပေါက်စဉ်",
+          month: month || "စက်တင်ဘာလ ၂၀၂၆",
+          p1: p1,
+          p2: p2,
+          p3: p3,
+          special: ps,
+          published_by: auth.currentUser.email,
+          published_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert("ထီပေါက်စဉ်ကို အောင်မြင်စွာ တရားဝင် ထုတ်ပြန်လိုက်ပါပြီ!");
+      } catch (err) {
+        alert("ထုတ်ပြန်ရာတွင် အမှားဖြစ်ပေါ်ပါသည်: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> <span>ပေါက်စဉ် ထုတ်ပြန်မည်</span>';
+        lucide.createIcons();
+      }
+    }
+
+    async function fetchLatestDraw() {
+      const doc = await db.collection('draws').doc('latest_draw').get();
+      if (doc.exists) {
+        const d = doc.data();
+        document.getElementById('drawTitle').value = d.title || "";
+        document.getElementById('drawMonth').value = d.month || "";
+        document.getElementById('prize1').value = d.p1 || "";
+        document.getElementById('prize2').value = d.p2 || "";
+        document.getElementById('prize3').value = d.p3 || "";
+        document.getElementById('prizeSpecial').value = d.special || "";
+      }
+    }
+
+    // 9. SETTINGS MODAL & AGENT WHITELIST
+    function openSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('hidden');
+      document.getElementById('newAdminEmailInput').value = currentAdminEmail;
+      lucide.createIcons();
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    async function transferAdminRole() {
+      const newEmail = document.getElementById('newAdminEmailInput').value.trim();
+      if (!newEmail || !newEmail.includes('@')) {
+        alert("မှန်ကန်သော အီးမေးလ် ရိုက်ထည့်ပါ");
+        return;
+      }
+      if (confirm(`Admin တာဝန်အား "${newEmail}" သို့ လွှဲပြောင်းရန် သေချာပါသလား? သင်၏ Admin လုပ်ပိုင်ခွင့် ချက်ချင်း ရပ်စဲပါမည်။`)) {
+        try {
+          await db.collection('settings').doc('admin_config').set({
+            admin_email: newEmail,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          alert("Admin Gmail အား အောင်မြင်စွာ လွှဲပြောင်းပြီးပါပြီ။ စနစ်မှ ထွက်ပါမည်။");
+          await auth.signOut();
+        } catch (err) {
+          alert("လွှဲပြောင်းရာတွင် အမှားဖြစ်ပေါ်ပါသည်: " + err.message);
+        }
+      }
+    }
+
+    async function addApprovedAgent(e) {
+      e.preventDefault();
+      const email = document.getElementById('agentEmailInput').value.trim().toLowerCase();
+      const unit = document.getElementById('agentUnitInput').value.trim();
+
+      try {
+        await db.collection('approved_agents').doc(email).set({
+          email: email,
+          unit_name: unit,
+          added_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('agentEmailInput').value = "";
+        document.getElementById('agentUnitInput').value = "";
+        alert("Agent အား ခွင့်ပြုစာရင်းထဲ အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ");
+      } catch (err) {
+        alert("Agent ထည့်သွင်းရာတွင် အမှားဖြစ်ပေါ်ပါသည်: " + err.message);
+      }
+    }
+
+    function listenToApprovedAgents() {
+      db.collection('approved_agents').onSnapshot(snap => {
+        const tbody = document.getElementById('agentTableBody');
+        tbody.innerHTML = "";
+        if (snap.empty) {
+          tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-500">ခွင့်ပြုထားသော Agent မရှိသေးပါ</td></tr>';
+          return;
+        }
+        snap.forEach(doc => {
+          const d = doc.data();
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-700/40";
+          tr.innerHTML = `
+            <td class="p-2.5 font-medium text-white">${d.email}</td>
+            <td class="p-2.5 text-slate-300">${d.unit_name}</td>
+            <td class="p-2.5 text-right">
+              <button onclick="removeAgent('${doc.id}')" class="text-red-400 hover:text-red-300">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+      });
+    }
+
+    async function removeAgent(agentEmail) {
+      if (confirm(`Agent "${agentEmail}" ၏ အသုံးပြုခွင့်ကို ပိတ်သိမ်း/ဖျက်ပစ်ရန် သေချာပါသလား?`)) {
+        await db.collection('approved_agents').doc(agentEmail).delete();
+      }
+    }
+  </script>
+</body>
+</html>
